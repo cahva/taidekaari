@@ -1,7 +1,6 @@
 ---
-import { Image } from "astro:assets";
 import { ViewTransitions } from "astro:transitions";
-import logoutIcon from "../images/logout.svg";
+import  SpeedInsights  from "@vercel/speed-insights/astro"
 
 interface Props {
   title: string;
@@ -52,5 +51,6 @@ const user = Astro.locals.user;
         <slot />
       </div>
     </div>
+    <SpeedInsights />
   </body>
 </html>
