@@ -1,0 +1,271 @@
+---
+import { db, Image, Category, User, eq } from "astro:db";
+import Layout from "../../../layouts/Layout.astro";
+import ImageCard from "../../../components/ImageCard.astro";
+
+if (!Astro.locals.user) {
+  return Astro.redirect("/");
+}
+
+const user = Astro.locals.user;
+
+const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect("/404");
+}
+
+const cat = await db
+  .select()
+  .from(Category)
+  .where(eq(Category.id, Number(id)))
+  .get();
+
+if (!cat) {
+  return Astro.redirect("/404");
+}
+
+if (Astro.request.method === "POST") {
+  try {
+    const data = await Astro.request.formData();
+
+    const file = data.get("file") as File;
+    const imageId = data.get("imageId") as string;
+    const title = data.get("title") as string;
+    const gridsize = data.get("gridsize") as string;
+
+    // Save the image to the database
+    await db.insert(Image).values([
+      {
+        id: imageId,
+        filename: file.name,
+        userId: user.id,
+        categoryId: Number(id),
+        createdAt: new Date(),
+        title: title || undefined,
+        gridsize: gridsize || undefined,
+      },
+    ]);
+
+    // Refresh the page
+    return Astro.redirect(Astro.request.url);
+  } catch (e) {
+    console.error("Error", e);
+  }
+}
+
+// Images with user
+const imagesWithUser = await db
+  .select()
+  .from(Image)
+  .where(eq(Image.categoryId, Number(id)))
+  .innerJoin(User, eq(Image.userId, User.id));
+
+const cardTransitionName = "card-" + id;
+---
+
+<Layout title={cat.name}>
+  <div>
+    <div class="mb-4">
+      <a
+        href="/"
+        class="text-gray-600 dark:text-gray-400 hover:underline font-semibold decoration-gray-500"
+        >&lArr; Takaisin etusivulle</a
+      >
+    </div>
+    <h2 class="text-2xl mb-4">{cat.name}</h2>
+    <div transition:name={cardTransitionName}>
+      {
+        imagesWithUser.length === 0 && (
+          <div class="text-gray-600 dark:text-gray-400">
+            Ei kuvia tässä paikassa
+          </div>
+        )
+      }
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {
+          imagesWithUser.map(({ Image, User }) => (
+            <a href={`/tila/${id}/kuva/${Image.id}`} class="shadow-lg">
+              <ImageCard
+                imageId={Image.id}
+                userName={User.fullname}
+                width={400}
+                filename={Image.filename}
+                title={Image.title}
+                gridsize={Image.gridsize}
+              />
+            </a>
+          ))
+        }
+      </div>
+      <hr class="my-8" />
+      <button
+        id="add-image"
+        class="bg-amber-700 hover:bg-amber-600 text-white px-4 py-2 rounded-md cursor-pointer transition-colors mb-4"
+        >Lisää uusi kuva
+      </button>
+      <form
+        id="addimage"
+        method="post"
+        class="hidden mt-4 border border-amber-300 bg-amber-200 dark:border-gray-600 dark:bg-gray-600 p-4 rounded shadow-xl"
+      >
+        <input type="hidden" name="categoryId" value={id} />
+        <input type="hidden" name="imageId" />
+        <h3 class="text-xl mb-4">Lisää uusi kuva</h3>
+        <div class="flex items-center gap-4 flex-wrap">
+          <input
+            type="file"
+            name="file"
+            id="file"
+            class="hidden"
+            accept="image/*"
+          />
+          <div class="w-64">
+            <label
+              for="file"
+              id="file-label"
+              class="bg-gray-500 text-white px-4 py-2 rounded-md cursor-pointer text-nowrap"
+              >Valitse kuva
+            </label>
+          </div>
+          <div>
+            <label for="title" class="dark:text-white text-gray-900"
+              >Otsikko</label
+            >
+            <input
+              type="text"
+              name="title"
+              id="title"
+              class="border border-gray-300 rounded-md p-2 w-full text-gray-900"
+              placeholder="Kuvan otsikko"
+            />
+          </div>
+
+          <div>
+            <label for="gridsize" class="dark:text-white text-gray-900"
+              >Ruudukon koko</label
+            >
+            <select
+              name="gridsize"
+              id="gridsize"
+              class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-amber-600 sm:max-w-xs sm:text-sm sm:leading-6"
+            >
+              <option value="">Valitse koko</option>
+              <option value="10x10">10x10</option>
+              <option value="20x20">20x20</option>
+            </select>
+          </div>
+        </div>
+        <div class="hidden my-4" id="file-name"></div>
+        <button
+          id="submit"
+          disabled
+          type="button"
+          class="bg-amber-700 hover:bg-amber-600 text-white px-4 py-2 rounded-md cursor-pointer mt-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex"
+          >Lähetä
+        </button>
+      </form>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import type { UploadResponse } from "../../api/upload/get-url";
+
+  document.addEventListener("astro:page-load", () => {
+    const fileInput = document.getElementById("file");
+    const submitButton = document.getElementById("submit") as HTMLButtonElement;
+    const addImageForm = document.getElementById("addimage") as HTMLFormElement;
+    const addImageButton = document.getElementById("add-image");
+    let uploadUrl = "";
+    let imageId = "";
+
+    function uploadData(url: string, data: FormData) {
+      return fetch(url, {
+        method: "POST",
+        body: data,
+      });
+    }
+
+    addImageButton?.addEventListener("click", async () => {
+      addImageForm.classList.toggle("hidden");
+      addImageButton.classList.toggle("hidden");
+
+      // Scroll to bottom
+      window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: "smooth",
+      });
+
+      // Get categoryId from addImageForm
+      const formData = new FormData(addImageForm);
+      const categoryId = formData.get("categoryId");
+
+      // Get the upload url from our api
+      const res = await fetch("/api/upload/get-url?categoryId=" + categoryId);
+      const data = (await res.json()) as UploadResponse;
+
+      uploadUrl = data.result.uploadURL;
+      imageId = data.result.id;
+
+      // Set the imageId to the form
+      const imageIdInput = document.querySelector(
+        "input[name=imageId]"
+      ) as HTMLInputElement;
+      imageIdInput.value = imageId;
+    });
+
+    fileInput?.addEventListener("change", (e) => {
+      const target = e.target as HTMLInputElement;
+      const files = target.files;
+
+      if (!files) {
+        return;
+      }
+
+      const filenameEl = document.getElementById("file-name");
+
+      if (files && filenameEl) {
+        filenameEl.classList.remove("hidden");
+        filenameEl.textContent = "Tiedostonimi: " + files[0].name;
+
+        // Enable submit button
+        if (submitButton) {
+          submitButton.disabled = false;
+        }
+      } else if (filenameEl) {
+        filenameEl.classList.add("hidden");
+      }
+    });
+
+    submitButton?.addEventListener("click", async () => {
+      const formData = new FormData(addImageForm);
+      const file = formData.get("file") as File;
+
+      if (!file) {
+        return;
+      }
+
+      // Add spinner to the submit button
+      submitButton.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>Lähetetään`;
+
+      // Add disabled state to the submit button
+      submitButton.disabled = true;
+
+      const dataToCloudflare = new FormData();
+      dataToCloudflare.append("file", file);
+
+      const res = await uploadData(uploadUrl, dataToCloudflare);
+      const json = (await res.json()) as UploadResponse;
+
+      // TODO: do something if result.success is false
+      // But now, let's just submit the form where we handle
+      // saving the image to the database
+
+      addImageForm.requestSubmit();
+    });
+  });
+</script>

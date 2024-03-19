@@ -1,0 +1,64 @@
+---
+interface Props {
+  imageId: string;
+  filename: string;
+  userName: string;
+  width?: number;
+  title?: string | null;
+  gridsize?: string | null;
+  editmode?: boolean;
+}
+
+const { imageId, filename, userName, width, title, gridsize, editmode } =
+  Astro.props;
+
+const variant = width ? "w=" + width : "public";
+const imageSrc = `https://imagedelivery.net/RUkpPV9lzZPhEDf5OZFR8A/${imageId}/${variant}`;
+---
+
+<div
+  class={`group ${variant !== 'public' ? 'aspect-h-7 aspect-w-10' : ''} block w-full overflow-hidden bg-white rounded-t-lg shadow-lg`}
+>
+  <img
+    src={imageSrc}
+    alt={title || filename}
+    class={`${variant !== "public" ? " object-cover group-hover:opacity-75" : "w-full"}`}
+  />
+</div>
+<div class="p-4 bg-gradient-to-t from-gray-100 from-50% to-white dark:from-slate-50 dark:to-slate-300 rounded-b-lg shadow-lg">
+  {
+    !editmode && (
+        <h2 class="text-lg font-bold text-gray-800">{title || filename}</h2>
+        <div class="flex items-center justify-between">
+          <p class="text-gray-600">
+            Tekijä: {userName}
+          </p>
+          {gridsize && (
+              <span class="bg-pink-100 text-pink-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full dark:bg-pink-900 dark:text-pink-300">{gridsize}</span>
+          )}
+        </div>
+    )
+  }
+
+  {
+    editmode && (
+        <label class="block mb-2 text-sm font-bold text-gray-700" for="title">
+          Otsikko
+          <input type="text" id="title" name="title" value={title} class="font-normal w-full p-2 border-none rounded ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-amber-600 focus:ring-inset" />
+        </label>
+        <label class="block mb-2 text-sm font-bold text-gray-700" for="gridsize">
+          Ruudukon koko
+          <select
+              name="gridsize"
+              id="gridsize"
+              class="font-normal block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-amber-600 sm:max-w-xs sm:text-sm sm:leading-6"
+            >
+              <option value="" selected={!gridsize}>Ei kokoa</option>
+              <option value="10x10" selected={gridsize === "10x10"}>10x10</option>
+              <option value="20x20" selected={gridsize === "20x20"}>20x20</option>
+            </select>
+        </label>
+    )
+  }
+  <slot />
+</div>

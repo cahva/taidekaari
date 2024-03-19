@@ -1,0 +1,29 @@
+---
+import { db, Image, eq } from "astro:db";
+
+interface Props {
+  name: string;
+  id: number;
+}
+
+const { id, name } = Astro.props;
+const href = `/tila/${id}`;
+const transitionName = "card-" + id;
+
+const categoryImages = await db
+  .select()
+  .from(Image)
+  .where(eq(Image.categoryId, id))
+  .all();
+const count = categoryImages.length;
+---
+
+<div
+  class="hover:opacity-75 col-span-1 flex flex-col divide-y divide-gray-200 rounded-lg bg-amber-300 dark:bg-gray-600 shadow-lg"
+  transition:name={transitionName}
+>
+  <a href={href} class="p-4">
+    <h2 class="text-xl">{name}</h2>
+    <p class="text-sm text-amber-900 dark:text-gray-400">{count} {count === 1 ? 'kuva' : 'kuvaa'}</p>
+  </a>
+</div>

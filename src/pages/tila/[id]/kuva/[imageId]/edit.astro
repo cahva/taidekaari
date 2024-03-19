@@ -1,0 +1,126 @@
+---
+import { db, eq, Image, User, Category } from "astro:db";
+import Layout from "../../../../../layouts/Layout.astro";
+import ImageCard from "../../../../../components/ImageCard.astro";
+
+const { id: categoryId, imageId } = Astro.params;
+
+const { user } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/");
+}
+
+if (!imageId) {
+  return new Response(null, {
+    status: 404,
+    statusText: "Not Found",
+  });
+}
+
+if (Astro.request.method === "POST") {
+  const data = await Astro.request.formData();
+  const title = data.get("title") as string;
+  const gridsize = data.get("gridsize") as string;
+  await db
+    .update(Image)
+    .set({
+      title,
+      gridsize,
+    })
+    .where(eq(Image.id, imageId));
+  return Astro.redirect(`/tila/${categoryId}/kuva/${imageId}`);
+}
+
+const data = await db
+  .select()
+  .from(Image)
+  .innerJoin(User, eq(Image.userId, User.id))
+  .innerJoin(Category, eq(Image.categoryId, Category.id))
+  .where(eq(Image.id, imageId))
+  .get();
+
+if (!data) {
+  return new Response(null, {
+    status: 404,
+    statusText: "Not Found",
+  });
+}
+
+const isAuthor = user.id === data.User.id;
+
+if (Astro.request.method === "DELETE" && isAuthor) {
+  await db.delete(Image).where(eq(Image.id, imageId));
+  return new Response(null, {
+    status: 204,
+    statusText: "No Content",
+    headers: {
+      "HX-Redirect": `/tila/${categoryId}`,
+    },
+  });
+}
+
+const pageTitle = data.Image.title
+  ? `${data.Image.title} - ${data.User.fullname}`
+  : `Kuva ${data.Image.filename}`;
+
+const cardTransitionName = "card-" + categoryId;
+---
+
+<Layout title={pageTitle}>
+  <div class="mb-4" transition:animate="none">
+    <a
+      href=`/tila/${categoryId}`
+      class="text-gray-600 dark:text-gray-400 hover:underline font-semibold decoration-gray-500"
+      >&lArr; Takaisin osioon "{data.Category.name}"</a
+    >
+  </div>
+  <div transition:name={cardTransitionName}>
+    <form method="post">
+      <ImageCard
+        filename={data.Image.filename}
+        imageId={data.Image.id}
+        userName={data.User.fullname}
+        title={data.Image.title}
+        gridsize={data.Image.gridsize}
+        editmode={true}
+      >
+        {
+          isAuthor && (
+            <div class="text-sm flex justify-end gap-x-4 gap-y-2 items-center flex-wrap mt-4">
+              <button class="bg-amber-700 hover:bg-amber-600 text-white font-semibold py-2 px-4 rounded">
+                Tallenna
+              </button>
+              <a
+                href={`/tila/${categoryId}/kuva/${imageId}`}
+                class="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded"
+              >
+                Peruuta
+              </a>
+              <button
+                id="deleteimagebutton"
+                type="button"
+                hx-delete={`/tila/${categoryId}/kuva/${imageId}/edit`}
+                hx-trigger="click"
+                hx-confirm="Haluatko varmasti poistaa kuvan?"
+                class=" text-red-500 underline font-semibold py-2 px-4"
+              >
+                Poista kuva
+              </button>
+            </div>
+          )
+        }
+      </ImageCard>
+    </form>
+  </div>
+</Layout>
+<script>
+  document.addEventListener("astro:page-load", () => {
+    // We can scroll to bottom because coming to this page means we will edit properties of the image
+    window.scrollTo(0, document.body.scrollHeight);
+  })
+</script>
+<script
+  src="https://unpkg.com/htmx.org@1.9.11"
+  integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0"
+  crossorigin="anonymous"></script>

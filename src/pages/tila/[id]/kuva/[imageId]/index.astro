@@ -1,0 +1,130 @@
+---
+import { db, eq, Image, User, Category } from "astro:db";
+import Layout from "../../../../../layouts/Layout.astro";
+import ImageCard from "../../../../../components/ImageCard.astro";
+
+const { id: categoryId, imageId } = Astro.params;
+
+const { user } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/");
+}
+
+if (!imageId) {
+  return new Response(null, {
+    status: 404,
+    statusText: "Not Found",
+  });
+}
+
+const data = await db
+  .select()
+  .from(Image)
+  .innerJoin(User, eq(Image.userId, User.id))
+  .innerJoin(Category, eq(Image.categoryId, Category.id))
+  .where(eq(Image.id, imageId))
+  .get();
+
+if (!data) {
+  return new Response(null, {
+    status: 404,
+    statusText: "Not Found",
+  });
+}
+
+const isAuthor = user.id === data.User.id;
+
+const pageTitle = data.Image.title
+  ? `${data.Image.title} - ${data.User.fullname}`
+  : `Kuva ${data.Image.filename}`;
+
+const cardTransitionName = "card-" + categoryId;
+---
+
+<Layout title={pageTitle}>
+  <div class="mb-4" transition:animate="none">
+    <a
+      href=`/tila/${categoryId}`
+      class="text-gray-600 dark:text-gray-300 hover:underline font-semibold decoration-gray-500"
+      >&lArr; Takaisin osioon "{data.Category.name}"</a
+    >
+  </div>
+  <div transition:name={cardTransitionName}>
+    <ImageCard
+      filename={data.Image.filename}
+      imageId={data.Image.id}
+      userName={data.User.fullname}
+      title={data.Image.title}
+      gridsize={data.Image.gridsize}
+    >
+      {
+        isAuthor && (
+          <div class="flex items-center justify-end mt-4 text-sm flex-wrap gap-2">
+            <a
+              href={`/tila/${categoryId}/kuva/${imageId}/edit`}
+              class="bg-amber-700 hover:bg-amber-600 text-white font-semibold py-2 px-4 rounded"
+            >
+              Muokkaa
+            </a>
+            <button
+              data-imageid={imageId}
+              data-imagename={data.Image.filename}
+              id="downloadimagebutton"
+              class="flex gap-1 items-center text-gray-800 transform transition duration-75 hover:scale-110 hover:text-gray-600 font-semibold py-2 px-4 rounded"
+            >
+              <svg
+                class="w-4 h-4 "
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 13V4M7 14H5a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1h-2m-1-5-4 5-4-5m9 8h.01"
+                />
+              </svg>
+
+              <span>Lataa kuva</span>
+            </button>
+          </div>
+        )
+      }
+    </ImageCard>
+  </div>
+  <script>
+    document.addEventListener("astro:page-load", () => {
+      const downloadButton = document.getElementById(
+        "downloadimagebutton"
+      ) as HTMLButtonElement;
+
+      if (downloadButton) {
+        downloadButton.addEventListener("click", async () => {
+          const imageId = downloadButton.dataset.imageid;
+          const imageFilename = downloadButton.dataset.imagename;
+
+          console.log({ imageId, imageFilename })
+
+          if (!imageId || !imageFilename) {
+            return;
+          }
+          const response = await fetch(`/api/images/${imageId}/blob`);
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = imageFilename;
+          a.click();
+          URL.revokeObjectURL(url);
+        });
+      }
+      
+    });
+  </script></Layout
+>

@@ -1,0 +1,209 @@
+---
+import { db, Category, User, Session } from "astro:db";
+import Layout from "../layouts/Layout.astro";
+import Card from "../components/Card.astro";
+import { eq } from "astro:db";
+import { nanoid } from "nanoid";
+
+function setFlashCookie(name: string, value: string) {
+  Astro.cookies.set(name, value, {
+    expires: new Date(Date.now() + 1000),
+    httpOnly: true,
+    path: "/",
+    secure: true,
+  });
+}
+
+if (Astro.request.method === "POST") {
+  try {
+    const data = await Astro.request.formData();
+    const name = data.get("name") as string;
+    const code = data.get("code") as string;
+
+    if (!name || !code) {
+      setFlashCookie("errorCode", "VALIDATION_ERROR");
+      return Astro.redirect(Astro.url.pathname);
+    }
+
+    if (code !== import.meta.env.CODE) {
+      setFlashCookie("errorCode", "WRONG_CODE");
+      return Astro.redirect(Astro.url.pathname);
+    }
+
+    if (name && name.length > 0) {
+      const user = await db
+        .select()
+        .from(User)
+        .where(eq(User.name, name))
+        .get();
+
+      if (user) {
+        const sessionId = nanoid();
+
+        // Expires in 24 hours (unix timestamp in seconds)
+        const expiresAt = Math.floor(Date.now() / 1000) + 60 * 60 * 24;
+        await db.insert(Session).values({
+          id: sessionId,
+          userId: user.id,
+          expiresAt,
+        });
+
+        Astro.cookies.set("sessionId", sessionId, {
+          expires: new Date(Date.now() + 1000 * 60 * 60 * 24),
+          httpOnly: true,
+          path: "/",
+          secure: true,
+        });
+        return Astro.redirect("/");
+      }
+
+      setFlashCookie("errorCode", "USER_NOT_FOUND");
+      return Astro.redirect(Astro.url.pathname);
+    }
+    // Do something with the data
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(error.message);
+    }
+    setFlashCookie("errorCode", "GENERIC_ERROR");
+
+    return Astro.redirect(Astro.url.pathname);
+  }
+}
+
+const errorCode = Astro.cookies.get("errorCode");
+
+const user = Astro.locals.user;
+
+if (!user && Astro.cookies.has("sessionId")) {
+  // Remove the session cookie
+  Astro.cookies.delete("sessionId");
+}
+
+const categories = await db
+  .select()
+  .from(Category)
+  .orderBy(Category.name)
+  .all();
+---
+
+<Layout title="Taidekaari 2024">
+  {
+    errorCode && (
+      <div class="p-4 bg-red-100 text-red-800 rounded-md mb-4" id="errorcode">
+        {errorCode.value === "VALIDATION_ERROR" && (
+          <p class="text-sm">Täytä kaikki kentät</p>
+        )}
+        {errorCode.value === "WRONG_CODE" && <p class="text-sm">Väärä koodi</p>}
+        {errorCode.value === "USER_NOT_FOUND" && (
+          <p class="text-sm">Käyttäjää ei löytynyt</p>
+        )}
+        {errorCode.value === "GENERIC_ERROR" && (
+          <p class="text-sm">Jokin meni pieleen</p>
+        )}
+      </div>
+    )
+  }
+  {
+    !user && (
+      <div
+        class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8"
+        transition:animate="none"
+      >
+        <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+          <h2 class="mt-5 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900 dark:text-gray-200">
+            Kirjaudu sisään koodilla
+          </h2>
+        </div>
+
+        <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+          <form class="space-y-6" method="POST" id="loginform">
+            <div>
+              <label
+                for="name"
+                class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-200"
+              >
+                Nimi
+              </label>
+              <div class="mt-2">
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  required
+                  class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-amber-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-amber-600 sm:text-sm sm:leading-6"
+                />
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between">
+                <label
+                  for="code"
+                  class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-200"
+                >
+                  Koodi
+                </label>
+              </div>
+              <div class="mt-2">
+                <input
+                  id="code"
+                  name="code"
+                  type="password"
+                  required
+                  class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-amber-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-amber-600 sm:text-sm sm:leading-6"
+                />
+              </div>
+            </div>
+
+            <div>
+              <button
+                id="loginbutton"
+                type="submit"
+                class="flex w-full justify-center rounded-md bg-amber-700 hover:bg-amber-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600"
+              >
+                Kirjaudu sisään
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )
+  }
+  {
+    user && (
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {categories.map((category) => (
+          <Card name={category.name} id={category.id} />
+        ))}
+      </div>
+    )
+  }
+</Layout>
+<script>
+  document.addEventListener("astro:page-load", () => {
+    // Hide the error element after 10 seconds
+    const errorCode = document.getElementById("errorcode");
+    if (errorCode) {
+      setTimeout(() => {
+        errorCode.classList.add("hidden");
+      }, 10000);
+    }
+
+    // Add spinner to login button on submit
+    const loginButton = document.getElementById(
+      "loginbutton"
+    ) as HTMLButtonElement;
+    const loginForm = document.getElementById("loginform") as HTMLFormElement;
+
+    if (loginForm) {
+      loginForm.addEventListener("submit", () => {
+        loginButton.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>Kirjaudutaan...`;
+        loginButton.disabled = true;
+      });
+    }
+  });
+</script>
