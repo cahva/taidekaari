@@ -1,7 +1,7 @@
 ---
 import { db, eq, Image, User, Category } from "astro:db";
-import Layout from "../../../../../layouts/Layout.astro";
-import ImageCard from "../../../../../components/ImageCard.astro";
+import Layout from "@layouts/Layout.astro";
+import ImageCard from "@components/ImageCard.astro";
 
 const { id: categoryId, imageId } = Astro.params;
 
