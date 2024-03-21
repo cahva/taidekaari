@@ -7,8 +7,8 @@ export default {
 				'creamy': '#fdf7f2',
 			},
 			backgroundImage: () => ({
-				'logo-dark': "url('/logo-dark.png')",
-				'logo-light': "url('/logo-transparent.png')",
+				'logo-dark': "url('/logo-dark.webp')",
+				'logo-light': "url('/logo-transparent.webp')",
 			})
 		},
 	},
