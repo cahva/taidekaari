@@ -17,7 +17,7 @@ export default async function seed() {
     { id: 7, name: "Kulmis" },
     { id: 8, name: "Helleborgin kukka" },
     { id: 9, name: "Funky Lady" },
-    { id: 10, name: "Pala Keravaani" },
+    { id: 10, name: "Pala Keravaani", gridSizeImages: true },
   ]);
 
   await db
@@ -39,6 +39,15 @@ export default async function seed() {
         createdAt: new Date("2024-03-16T08:30:00Z"),
 				title: "Toinen kuva",
       },
+      {
+        id: "d8e7cd96-68de-4070-6c03-a6a9358f5100",
+        filename: "retro-wallpaper-10.jpg",
+        categoryId: 10,
+        userId: 1,
+        title: "Retro wallpaper",
+        gridsize: "10x10",
+        createdAt: new Date("2024-03-16T08:30:00Z"),
+      }
     ]);
 
   // TODO

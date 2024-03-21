@@ -12,6 +12,7 @@ const Category = defineTable({
   columns: {
     id: column.number({ primaryKey: true }),
     name: column.text(),
+    gridSizeImages: column.boolean({ optional: true }),
   },
 });
 
