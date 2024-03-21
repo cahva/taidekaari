@@ -1,9 +1,9 @@
 ---
-import { db, eq, Category, User, Session } from "astro:db";
+import { db, eq, sql, Category, Image, User, Session } from "astro:db";
+import { nanoid } from "nanoid";
 import Layout from "@layouts/Layout.astro"
 import Card from "@components/Card.astro";
 import LoginForm from "@components/LoginForm.astro";
-import { nanoid } from "nanoid";
 
 function setFlashCookie(name: string, value: string) {
   Astro.cookies.set(name, value, {
@@ -81,10 +81,17 @@ if (!user && Astro.cookies.has("sessionId")) {
 }
 
 const categories = await db
-  .select()
+  .select({
+    id: Category.id,
+    name: Category.name,
+    imageCount: sql<number>`count(${Image.id})`,
+  })
   .from(Category)
+  .leftJoin(Image, eq(Category.id, Image.categoryId))
+  .groupBy(Category.name)
   .orderBy(Category.name)
   .all();
+
 ---
 
 <Layout title="Taidekaari">
@@ -113,7 +120,7 @@ const categories = await db
     user && (
       <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {categories.map((category) => (
-          <Card name={category.name} id={category.id} />
+          <Card name={category.name} id={category.id} imageCnt={category.imageCount} />
         ))}
       </div>
     )
