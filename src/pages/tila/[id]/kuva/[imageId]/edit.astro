@@ -55,13 +55,6 @@ if (Astro.request.method === "POST") {
   return Astro.redirect(urlWithoutEdit);
 }
 
-if (Astro.request.method === "DELETE" && isAuthor) {
-  await db.delete(Image).where(eq(Image.id, imageId));
-  return new Response(null, {
-    status: 204,
-  });
-}
-
 const pageTitle = data.Image.title
   ? `${data.Image.title} - ${data.User.fullname}`
   : `Kuva ${data.Image.filename}`;
@@ -168,7 +161,7 @@ const cardTransitionName = "card-" + categoryId;
           const categoryId = deleteImageButton.dataset.categoryId;
           const imageId = deleteImageButton.dataset.imageId;
 
-          const deleteResult = await fetch(`/tila/${categoryId}/kuva/${imageId}/edit`, {
+          const deleteResult = await fetch(`/api/images/${imageId}`, {
             method: "DELETE",
           });
 
