@@ -59,10 +59,6 @@ if (Astro.request.method === "DELETE" && isAuthor) {
   await db.delete(Image).where(eq(Image.id, imageId));
   return new Response(null, {
     status: 204,
-    statusText: "No Content",
-    headers: {
-      "HX-Redirect": `/tila/${categoryId}`,
-    },
   });
 }
 
@@ -150,9 +146,8 @@ const cardTransitionName = "card-" + categoryId;
           <button
             id="deleteimagebutton"
             type="button"
-            hx-delete={`/tila/${categoryId}/kuva/${imageId}/edit`}
-            hx-trigger="click"
-            hx-confirm="Haluatko varmasti poistaa kuvan?"
+            data-category-id={categoryId}
+            data-image-id={imageId}
             class="text-red-500 underline font-semibold py-2 px-4"
           >
             Poista kuva
@@ -164,12 +159,28 @@ const cardTransitionName = "card-" + categoryId;
 </Layout>
 <script>
   document.addEventListener("astro:page-load", () => {
+    const deleteImageButton = document.getElementById("deleteimagebutton") as HTMLButtonElement;
+
+    if (deleteImageButton) {
+      deleteImageButton.addEventListener("click", async () => {
+        const confirmDelete = confirm("Haluatko varmasti poistaa kuvan?");
+        if (confirmDelete) {
+          const categoryId = deleteImageButton.dataset.categoryId;
+          const imageId = deleteImageButton.dataset.imageId;
+
+          const deleteResult = await fetch(`/tila/${categoryId}/kuva/${imageId}/edit`, {
+            method: "DELETE",
+          });
+
+          if (deleteResult.ok) {
+            window.location.href = `/tila/${categoryId}`;
+          }
+        }
+      });
+    }
+
     // We can scroll to bottom because coming to this page means we will edit properties of the image
     window.scrollTo(0, document.body.scrollHeight);
   });
 </script>
-<script
-  is:inline
-  src="https://unpkg.com/htmx.org@1.9.11"
-  integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0"
-  crossorigin="anonymous"></script>
+
