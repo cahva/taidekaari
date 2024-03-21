@@ -1,7 +1,7 @@
 ---
 import { db, Image, Category, User, eq } from "astro:db";
-import Layout from "../../../layouts/Layout.astro";
-import ImageCard from "../../../components/ImageCard.astro";
+import Layout from "@layouts/Layout.astro";
+import ImageCard from "@components/ImageCard.astro";
 
 if (!Astro.locals.user) {
   return Astro.redirect("/");
@@ -140,22 +140,26 @@ const cardTransitionName = "card-" + id;
               placeholder="Kuvan otsikko"
             />
           </div>
-
-          <div>
-            <label for="gridsize" class="dark:text-white text-gray-900"
-              >Ruudukon koko</label
-            >
-            <select
-              name="gridsize"
-              id="gridsize"
-              class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-amber-600 sm:max-w-xs sm:text-sm sm:leading-6"
-            >
-              <option value="">Ei kokoa</option>
-              <option value="10x10">10x10</option>
-              <option value="20x20">20x20</option>
-            </select>
-          </div>
+          {
+            cat.gridSizeImages && (
+              <div>
+                <label for="gridsize" class="dark:text-white text-gray-900">
+                  Ruudukon koko
+                </label>
+                <select
+                  name="gridsize"
+                  id="gridsize"
+                  class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-amber-600 sm:max-w-xs sm:text-sm sm:leading-6"
+                >
+                  <option value="">Ei kokoa</option>
+                  <option value="10x10">10x10</option>
+                  <option value="20x20">20x20</option>
+                </select>
+              </div>
+            )
+          }
         </div>
+
         <div class="hidden my-4" id="file-name"></div>
         <button
           id="submit"
@@ -170,7 +174,7 @@ const cardTransitionName = "card-" + id;
 </Layout>
 
 <script>
-  import type { UploadResponse } from "../../api/upload/get-url";
+  import type { UploadResponse } from "@api/upload/get-url";
 
   document.addEventListener("astro:page-load", () => {
     const fileInput = document.getElementById("file");
