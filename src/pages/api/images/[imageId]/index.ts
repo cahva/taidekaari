@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { db, eq, Image } from "astro:db";
+import { deleteImage } from "@lib/cloudflare";
 
 export const DELETE: APIRoute = async ({ locals, params }) => {
   const { imageId } = params;
@@ -23,31 +24,23 @@ export const DELETE: APIRoute = async ({ locals, params }) => {
     return new Response("Not found", { status: 404 });
   }
 
-  const cloudflareAccountId = import.meta.env.CLOUDFLARE_ACCOUNT_ID;
-  const cloudflareApiKey = import.meta.env.CLOUDFLARE_API_KEY;
-
   const isAuthor = user.id === image.userId;
 
   if (!isAuthor) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const response = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${cloudflareAccountId}/images/v1/${imageId}`,
-    {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${cloudflareApiKey}`,
-        "Content-Type": "application/json",
-      },
+  try {
+    const response = await deleteImage(imageId);
+    if (!response.ok) {
+      console.error("Failed to delete image", response.statusText);
+      return new Response("Failed to delete image", { status: 500 });
     }
-  );
-
-  if (!response.ok) {
+    await db.delete(Image).where(eq(Image.id, imageId));
+  } catch (error) {
+    console.error("Failed to delete image", error);
     return new Response("Failed to delete image", { status: 500 });
   }
-
-  await db.delete(Image).where(eq(Image.id, imageId));
 
   return new Response("Deleted", { status: 200 });
 };

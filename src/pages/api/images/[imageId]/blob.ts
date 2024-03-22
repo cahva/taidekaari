@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { getImageBlob } from "@lib/cloudflare";
 
 export const GET: APIRoute = async ({ locals, params }) => {
   const user = locals.user;
@@ -8,19 +9,11 @@ export const GET: APIRoute = async ({ locals, params }) => {
 
   const { imageId } = params;
 
-  const cloudflareAccountId = import.meta.env.CLOUDFLARE_ACCOUNT_ID;
-  const cloudflareApiKey = import.meta.env.CLOUDFLARE_API_KEY;
+  if (!imageId) {
+    return new Response("Bad request", { status: 400 });
+  }
 
-  // Query to cloudfront api
-  // https://api.cloudflare.com/client/v4/accounts/account_id/images/v1/image_id/blob
-
-  const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${cloudflareAccountId}/images/v1/${imageId}/blob`, {
-    method: "GET",
-    headers: {
-      "Authorization": `Bearer ${cloudflareApiKey}`,
-      "Content-Type": "application/json",
-    },
-  });
+  const response = await getImageBlob(imageId);
 
   let { readable, writable } = new TransformStream();
 
