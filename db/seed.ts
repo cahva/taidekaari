@@ -1,4 +1,4 @@
-import { db, User, Category, Image } from "astro:db";
+import { db, User, Category } from "astro:db";
 
 // https://astro.build/db/seed
 export default async function seed() {
@@ -19,36 +19,4 @@ export default async function seed() {
     { id: 9, name: "Funky Lady" },
     { id: 10, name: "Pala Keravaani", gridSizeImages: true },
   ]);
-
-  await db
-    .insert(Image)
-    .values([
-      {
-        id: "bba691ad-a668-423f-da83-f641ab197900",
-        filename: "pandox_arsstamma_2022_resize-1920.jpg",
-        userId: 2,
-        categoryId: 1,
-        createdAt: new Date("2024-03-16T08:30:00Z"),
-				title: "Pandox Årsstämma 2022",
-      },
-      {
-        id: "d965528c-f3dc-4e31-b8aa-af6e6d777c00",
-        filename: "fiskars_interim_image_library_10_rgb_hr_resize.jpg",
-        userId: 2,
-        categoryId: 1,
-        createdAt: new Date("2024-03-16T08:30:00Z"),
-				title: "Toinen kuva",
-      },
-      {
-        id: "d8e7cd96-68de-4070-6c03-a6a9358f5100",
-        filename: "retro-wallpaper-10.jpg",
-        categoryId: 10,
-        userId: 1,
-        title: "Retro wallpaper",
-        gridsize: "10x10",
-        createdAt: new Date("2024-03-16T08:30:00Z"),
-      }
-    ]);
-
-  // TODO
 }
