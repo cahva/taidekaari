@@ -29,7 +29,7 @@ if (Astro.request.method === "POST") {
   try {
     const data = await Astro.request.formData();
 
-    const file = data.get("file") as File;
+    const filename = data.get("filename") as string;
     const imageId = data.get("imageId") as string;
     const title = data.get("title") as string;
     const gridsize = data.get("gridsize") as string;
@@ -38,7 +38,7 @@ if (Astro.request.method === "POST") {
     await db.insert(Image).values([
       {
         id: imageId,
-        filename: file.name,
+        filename,
         userId: user.id,
         categoryId: Number(id),
         createdAt: new Date(),
@@ -111,6 +111,7 @@ const cardTransitionName = "card-" + id;
       >
         <input type="hidden" name="categoryId" value={id} />
         <input type="hidden" name="imageId" />
+        <input type="hidden" name="filename" />
         <h3 class="text-xl mb-4">Lisää uusi kuva</h3>
         <div class="flex items-center gap-4 flex-wrap">
           <input
@@ -269,6 +270,15 @@ const cardTransitionName = "card-" + id;
         console.error("Error uploading image", json);
         return;
       }
+
+      // Set the filename to the form
+      const filenameInput = document.querySelector(
+        "input[name=filename]"
+      ) as HTMLInputElement;
+      filenameInput.value = file.name;
+
+      // We can remove the file input (we uploaded it already)
+      fileInput?.remove();
 
       addImageForm.requestSubmit();
     });
