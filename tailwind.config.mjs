@@ -9,6 +9,7 @@ export default {
 			backgroundImage: () => ({
 				'logo-dark': "url('/logo-dark.webp')",
 				'logo-light': "url('/logo-transparent.webp')",
+				'grid-pattern': "url('/gridbg.svg')",
 			})
 		},
 	},

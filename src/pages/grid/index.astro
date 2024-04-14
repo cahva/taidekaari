@@ -1,0 +1,60 @@
+---
+import Layout from "@layouts/Layout.astro";
+import Card from "@components/Card.astro";
+import { db, eq, Grid, User } from "astro:db";
+import type { ImagePosition } from "db/config";
+
+const { user } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/");
+}
+
+if (Astro.request.method === "POST") {
+  const grid = await db.insert(Grid).values([
+    {
+      userId: user.id,
+      name: "Uusi ruudukko",
+      imagePositions: [],
+      createdAt: new Date(),
+    },
+  ]);
+
+  return Astro.redirect(`/grid/${grid.lastInsertRowid}`);
+}
+
+// Get all grids
+const grids = await db
+  .select()
+  .from(Grid)
+  .innerJoin(User, eq(Grid.userId, User.id))
+  .all();
+
+---
+
+<Layout title="Pala keravaani">
+  <form method="post">
+    <button
+      id="add-grid-button"
+      class="bg-amber-700 hover:bg-amber-600 text-white px-4 py-2 rounded-md cursor-pointer transition-colors mb-4"
+      >Lisää uusi ruudukko
+    </button>
+  </form>
+  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+      <!-- Grids -->
+      {
+        grids.map((grid) => {
+          // Let's turn the unknown type into a known type
+          const imagePositions = grid.Grid.imagePositions as ImagePosition[];
+          const createdAt = new Intl.DateTimeFormat("fi-FI", {
+            dateStyle: "medium",
+            timeStyle: "short",
+          }).format(grid.Grid.createdAt);
+          return (
+          <Card name={grid.Grid.name} id={grid.Grid.id} link={`/grid/${grid.Grid.id}`} imageCnt={imagePositions ? imagePositions.length : 0} author={grid.User.fullname} createdAt={createdAt}/>
+          );
+        })
+      }
+
+    </div></Layout
+>

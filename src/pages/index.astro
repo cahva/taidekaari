@@ -4,6 +4,7 @@ import { nanoid } from "nanoid";
 import Layout from "@layouts/Layout.astro"
 import Card from "@components/Card.astro";
 import LoginForm from "@components/LoginForm.astro";
+import { type AstroCookieSetOptions } from "astro";
 
 function setFlashCookie(name: string, value: string) {
   Astro.cookies.set(name, value, {
@@ -11,7 +12,7 @@ function setFlashCookie(name: string, value: string) {
     httpOnly: true,
     path: "/",
     secure: true,
-  });
+  } as AstroCookieSetOptions)
 }
 
 if (Astro.request.method === "POST") {
@@ -48,12 +49,14 @@ if (Astro.request.method === "POST") {
           expiresAt,
         });
 
-        Astro.cookies.set("sessionId", sessionId, {
+        const cookieOpts = {
           expires: new Date(Date.now() + 1000 * 60 * 60 * 24),
           httpOnly: true,
           path: "/",
           secure: true,
-        });
+        };
+
+        Astro.cookies.set("sessionId", sessionId, cookieOpts as AstroCookieSetOptions);
         return Astro.redirect("/");
       }
 
@@ -120,7 +123,7 @@ const categories = await db
     user && (
       <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {categories.map((category) => (
-          <Card name={category.name} id={category.id} imageCnt={category.imageCount} />
+          <Card name={category.name} id={category.id} link={`/tila/${category.id}`} imageCnt={category.imageCount} />
         ))}
       </div>
     )
