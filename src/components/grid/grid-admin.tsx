@@ -55,7 +55,7 @@ export default component$<GridAdminProps>((props) => {
         (image) =>
           !gridStore.grid.imagePositions.find((img) => img.imageId === image.id)
       )
-      .toSorted(sortByGridSize);
+      .sort(sortByGridSize);
   });
 
   useVisibleTask$(({ cleanup }) => {
