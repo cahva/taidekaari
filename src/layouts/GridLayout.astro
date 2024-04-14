@@ -1,0 +1,60 @@
+---
+import { ViewTransitions } from "astro:transitions";
+import  SpeedInsights  from "@vercel/speed-insights/astro"
+import Nav from "../components/Nav.astro";
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+const user = Astro.locals.user;
+---
+
+<!doctype html>
+<html lang="en" transition:animate="none">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Taidekaari - Taidekollektiivi tiloissa" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/webp" href="/tiloissa-logo.webp" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    <ViewTransitions />
+  </head>
+  <body class="bg-creamy dark:bg-slate-800">
+    <div
+      class="h-screen mx-auto text-black dark:text-creamy my-2 lg:my-6 px-4  xl:p-6"
+    >
+    <header>
+      <div class="mb-4 flex items-center justify-between gap-3">
+      <div
+        class="bg-no-repeat bg-contain bg-logo-light dark:bg-logo-dark min-h-24 w-36"
+      >
+      </div>
+      <h1 class="text-xl lg:text-2xl text-center">
+        <a href="/">Taidekaari</a>
+      </h1>
+      {
+        user && (
+          <div class="text-sm lg:text-base flex gap-3 items-center">
+            <span>{user.fullname}</span>
+            <span>
+              <a href="/logout" title="Kirjaudu ulos" data-astro-prefetch="false" class="opacity-25">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"><path stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m17 16 4-4m0 0-4-4m4 4H7m6 4v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1"/></svg>
+              </a>
+            </span>
+          </div>
+        )
+      }
+      </div>
+      <Nav />
+    </header>
+
+      <div transition:animate="fade">
+        <slot />
+      </div>
+    </div>
+    <SpeedInsights />
+  </body>
+</html>

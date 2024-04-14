@@ -1,0 +1,24 @@
+---
+import GridAdmin from "@components/grid/grid-admin";
+import GridLayout from "@layouts/GridLayout.astro";
+import { getGridWithImages, getAllImagesWithGridSize } from "@lib/grid"
+
+const { user } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/");
+}
+
+const { id } = Astro.params;
+
+const grid = await getGridWithImages(Number(id));
+const images = await getAllImagesWithGridSize();
+
+if (!grid) {
+  return Astro.redirect("/grid");
+}
+---
+
+<GridLayout title="Muokkaa ruudukkoa">
+  <GridAdmin data={grid} allImages={images} userId={user.id}/>
+</GridLayout>

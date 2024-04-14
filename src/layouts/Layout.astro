@@ -1,6 +1,7 @@
 ---
 import { ViewTransitions } from "astro:transitions";
 import  SpeedInsights  from "@vercel/speed-insights/astro"
+import Nav from '../components/Nav.astro';
 
 interface Props {
   title: string;
@@ -25,7 +26,8 @@ const user = Astro.locals.user;
     <div
       class="container mx-auto text-black dark:text-creamy my-2 lg:my-6 px-4 xl:dark:bg-gradient-to-t xl:dark:from-slate-700 xl:dark:to-slate-800 xl:bg-gradient-to-t xl:from-gray-50 xl:to-creamy xl:p-6 xl:rounded xl:shadow-sm"
     >
-      <header class="mb-4 flex items-center justify-between gap-3">
+      <header>
+        <div class="mb-4 flex items-center justify-between gap-3">
         <div
           class="bg-no-repeat bg-contain bg-logo-light dark:bg-logo-dark min-h-24 w-36"
         >
@@ -45,6 +47,8 @@ const user = Astro.locals.user;
             </div>
           )
         }
+        </div>
+        {user && (<Nav />)}
       </header>
 
       <div transition:animate="fade">

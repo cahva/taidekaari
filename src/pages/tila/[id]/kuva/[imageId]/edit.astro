@@ -35,10 +35,8 @@ if (!data) {
 
 const isAuthor = user.id === data.User.id;
 
-const urlWithoutEdit = `/tila/${categoryId}/kuva/${imageId}`;
-
 if (!isAuthor) {
-  return Astro.redirect(urlWithoutEdit);
+  return Astro.redirect(`/tila/${categoryId}/kuva/${imageId}`);
 }
 
 if (Astro.request.method === "POST") {
@@ -52,7 +50,7 @@ if (Astro.request.method === "POST") {
       gridsize,
     })
     .where(eq(Image.id, imageId));
-  return Astro.redirect(urlWithoutEdit);
+  return Astro.redirect(`/tila/${categoryId}/kuva/${imageId}`);
 }
 
 const pageTitle = data.Image.title

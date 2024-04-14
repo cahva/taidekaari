@@ -2,11 +2,13 @@
 interface Props {
   name: string;
   id: number;
+  link: string;
   imageCnt: number;
+  author?: string;
+  createdAt?: string;
 }
 
-const { id, name, imageCnt } = Astro.props;
-const href = `/tila/${id}`;
+const { id, name, imageCnt, link, author, createdAt } = Astro.props;
 const transitionName = "card-" + id;
 
 ---
@@ -15,8 +17,10 @@ const transitionName = "card-" + id;
   class="hover:opacity-75 col-span-1 flex flex-col divide-y divide-gray-200 rounded-lg bg-amber-300 dark:bg-gray-600 shadow-lg"
   transition:name={transitionName}
 >
-  <a href={href} class="p-4">
+  <a href={link} class="p-4">
     <h2 class="text-xl">{name}</h2>
-    <p class="text-sm text-amber-900 dark:text-gray-300">{imageCnt} {imageCnt === 1 ? 'kuva' : 'kuvaa'}</p>
+    <p class="text-lg text-amber-900 dark:text-gray-300">{imageCnt} {imageCnt === 1 ? 'kuva' : 'kuvaa'}</p>
+    {author && (<div class="my-4 border-b border-dashed border-b-amber-100 dark:border-slate-400 shadow-xl"/><p class="text-sm text-amber-900 dark:text-gray-300">Tekijä: {author}</p>)}
+    {createdAt && <p class="text-sm text-amber-900 dark:text-gray-300">Luotu: {createdAt}</p>}
   </a>
 </div>
