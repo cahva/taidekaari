@@ -20,7 +20,8 @@ if (Astro.request.method === "POST") {
     },
   ]);
 
-  return Astro.redirect(`/grid/${grid.lastInsertRowid}`);
+  Astro.redirect(`/grid/${grid.lastInsertRowid}`);
+  return;
 }
 
 // Get all grids
