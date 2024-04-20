@@ -43,5 +43,16 @@ export async function getGridWithImages(id: number) {
   }
 };
 
+export function convertGridSize(gridsize: string | null) {
+  switch (gridsize) {
+    case "10x10":
+      return 10;
+    case "20x20":
+      return 20;
+    default:
+      throw new Error(`Invalid grid size: ${gridsize}`);
+  }
+}
+
 export type GetGridWithImagesType = Awaited<ReturnType<typeof getGridWithImages>>;
 export type GetAllImagesWithGridSizeType = Awaited<ReturnType<typeof getAllImagesWithGridSize>>;

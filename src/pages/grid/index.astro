@@ -1,8 +1,9 @@
 ---
 import Layout from "@layouts/Layout.astro";
 import Card from "@components/Card.astro";
-import { db, eq, Grid, User } from "astro:db";
+import { db, and, isNotNull, eq, Grid, Image, User } from "astro:db";
 import type { ImagePosition } from "db/config";
+import { convertGridSize } from '../../lib/grid'
 
 const { user } = Astro.locals;
 
@@ -11,11 +12,61 @@ if (!user) {
 }
 
 if (Astro.request.method === "POST") {
+  
+  // Let's fetch all the images from category 10
+  const images = await db
+    .select()
+    .from(Image)
+    .where(and(
+      eq(Image.categoryId, 10),
+      isNotNull(Image.gridsize),
+    ))
+    .all();
+
+
+  // Create a new array for the x and y positions of the images
+  // Sort the images by gridsize (first 20x20 images, then 40x40 images, etc.)
+  // One image takes 80x80 pixels, so we need to calculate the gridsize
+  // eg. [{ x: 0, y: 0, size: 20 }, { x: 80, y: 0, size: 20 }, { x: 0, y: 80, size: 10 }]
+  const sortedImages = images.sort((a, b) => {
+    if (!a.gridsize || !b.gridsize) {
+      return 0;
+    }
+
+    if (a.gridsize === b.gridsize) {
+      return 0;
+    }
+
+    return a.gridsize > b.gridsize ? -1 : 1;
+  });
+  const positions: ImagePosition[] = [];
+  let x = 0;
+  let y = 0;
+  for (const image of sortedImages) {
+    if (!image.gridsize) {
+      continue;
+    }
+
+    const size = convertGridSize(image.gridsize);
+    positions.push({
+      imageId: image.id,
+      x,
+      y,
+      size,
+    });
+
+    x += 80;
+    if (x >= 800) {
+      x = 0;
+      y += 80;
+    }
+  }
+
   const grid = await db.insert(Grid).values([
     {
       userId: user.id,
       name: "Uusi ruudukko",
-      imagePositions: [],
+      imagePositions: positions,
       createdAt: new Date(),
     },
   ]);
