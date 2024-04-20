@@ -20,8 +20,12 @@ if (Astro.request.method === "POST") {
     },
   ]);
 
-  Astro.redirect(`/grid/${grid.lastInsertRowid}`);
-  return;
+  const redirectUrl = `/grid/${grid.lastInsertRowid}`;
+  
+  // This console.log is here just to suppress the astro check warning
+  console.log('Redirecting to', redirectUrl);
+  
+  return Astro.redirect(redirectUrl);
 }
 
 // Get all grids

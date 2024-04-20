@@ -1,11 +1,23 @@
 ---
-import { db, eq, Image, User, Category } from "astro:db";
+import { db, eq, like, Grid, Image, User, Category } from "astro:db";
 import Layout from "@layouts/Layout.astro";
 import ImageCard from "@components/ImageCard.astro";
+import type { ImagePosition } from "db/config";
 
 const { id: categoryId, imageId } = Astro.params;
 
 const { user } = Astro.locals;
+
+function convertGridSize(gridsize: string) {
+  switch (gridsize) {
+    case "10x10":
+      return 10;
+    case "20x20":
+      return 20;
+    default:
+      return null;
+  }
+}
 
 if (!user) {
   return Astro.redirect("/");
@@ -50,6 +62,53 @@ if (Astro.request.method === "POST") {
       gridsize,
     })
     .where(eq(Image.id, imageId));
+
+  // We need to find if the image is in a grid and if so, update the grid size (10x10 is 10 and 20x20 is 20)
+  // in grid imagePositions field
+  const grids = await db
+    .select()
+    .from(Grid)
+    .where(like(Grid.imagePositions, `%${imageId}%`))
+    .all();
+
+  if (grids.length > 0) {
+    const convertedSize = convertGridSize(gridsize);
+    for (const grid of grids) {
+      const imagePositions = grid.imagePositions as ImagePosition[];
+
+      // If the grid size is null, we remove the image from imagePositions
+      if (!convertedSize) {
+        const updatedImagePositions = imagePositions.filter(
+          (position) => position.imageId !== imageId
+        );
+
+        await db
+          .update(Grid)
+          .set({
+            imagePositions: updatedImagePositions,
+          })
+          .where(eq(Grid.id, grid.id));
+        continue;
+      }
+      const updatedImagePositions = imagePositions.map((position) => {
+        if (position.imageId === imageId) {
+          return {
+            ...position,
+            size: convertedSize,
+          };
+        }
+        return position;
+      });
+
+      await db
+        .update(Grid)
+        .set({
+          imagePositions: updatedImagePositions,
+        })
+        .where(eq(Grid.id, grid.id));
+    }
+  }
+
   return Astro.redirect(`/tila/${categoryId}/kuva/${imageId}`);
 }
 
