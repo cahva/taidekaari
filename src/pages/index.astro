@@ -4,7 +4,6 @@ import { nanoid } from "nanoid";
 import Layout from "@layouts/Layout.astro"
 import Card from "@components/Card.astro";
 import LoginForm from "@components/LoginForm.astro";
-import { type AstroCookieSetOptions } from "astro";
 
 function setFlashCookie(name: string, value: string) {
   Astro.cookies.set(name, value, {
@@ -12,7 +11,7 @@ function setFlashCookie(name: string, value: string) {
     httpOnly: true,
     path: "/",
     secure: true,
-  } as AstroCookieSetOptions)
+  })
 }
 
 if (Astro.request.method === "POST") {
@@ -56,7 +55,7 @@ if (Astro.request.method === "POST") {
           secure: true,
         };
 
-        Astro.cookies.set("sessionId", sessionId, cookieOpts as AstroCookieSetOptions);
+        Astro.cookies.set("sessionId", sessionId, cookieOpts);
         return Astro.redirect("/");
       }
 
