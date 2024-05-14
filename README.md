@@ -9,3 +9,4 @@ This is the Vercel deployment of the app. I first tried to use Cloudflare pages,
 What else was used:
 - Tailwind
 - Cloudflare images
+- Qwik
